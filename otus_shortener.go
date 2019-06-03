@@ -3,6 +3,7 @@ package otus_shortener
 import (
 	"fmt"
 	"hash/fnv"
+	"math/rand"
 )
 
 type Storage map[string]string
@@ -12,24 +13,23 @@ type Shortener interface {
 	Resolve(string) string
 }
 
-func main() {
-	rawString := "http://localhost:7070/pkg/hash/fnv/"
-	storage := Storage{}
-
-	hashString := storage.Shorten(rawString)
-	storage[hashString] = rawString
-	resolvedURL := storage.Resolve(hashString)
-
-	fmt.Println("Hash:", hashString)
-	fmt.Println("URL:", resolvedURL)
-}
-
-func (s Storage) Shorten(str string) string {
+func (s Storage) Shorten(url string) string {
 	h := fnv.New32()
-	h.Write([]byte(str))
-	return fmt.Sprintf("%d", h.Sum32())
+	h.Write([]byte(url))
+	hash := fmt.Sprintf("%d", h.Sum32())
+
+	for {
+		if _, existed := s[hash]; existed {
+			hash = fmt.Sprintf("%s%d", hash, rand.Intn(10))
+		} else {
+			break
+		}
+	}
+
+	s[hash] = url
+	return hash
 }
 
-func (s Storage) Resolve(str string) string {
-	return s[str]
+func (s Storage) Resolve(hash string) string {
+	return s[hash]
 }
